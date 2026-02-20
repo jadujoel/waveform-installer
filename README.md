@@ -1,6 +1,6 @@
 # @jadujoel/waveform-installer
 
-Installs a local `audiowaveform` binary suitable for the current OS + CPU architecture, so you can precompute Peaks.js waveform files without system-level package setup.
+Installs a local `audiowaveform` binary for the current OS and architecture so you can precompute Peaks.js waveform data.
 
 ## Install
 
@@ -8,35 +8,52 @@ Installs a local `audiowaveform` binary suitable for the current OS + CPU archit
 bun install
 ```
 
-`postinstall` downloads and places the binary at `.audiowaveform/audiowaveform` (or `.exe` on Windows).
+The `postinstall` script installs or links `audiowaveform` into `.audiowaveform/`.
 
-## Supported targets
+## Platform behavior
 
-- `darwin`: `arm64`, `x64` (Homebrew install/link)
-- `linux`: `arm64`, `x64` (Debian package extraction)
-- `win32`: `x64`, `ia32` (GitHub release zip)
+- `darwin` (`arm64`, `x64`): uses Homebrew (`brew install audiowaveform`) if needed, then links the binary locally.
+- `linux` (`arm64`, `x64`): extracts binary from official Debian release package.
+- `win32` (`x64`, `ia32`): downloads official zip from GitHub releases.
 
-## Use as CLI
+## Linux dependency handling
+
+- After install, Linux runs `ldd` on the binary.
+- If shared libraries are missing and system is apt-based, installer attempts auto-fix via `apt-get`.
+- Auto-fix requires root or passwordless `sudo`.
+- If auto-fix is not possible, installer prints the exact manual `apt-get install` command.
+
+## CLI usage
 
 ```bash
-bunx audiowaveform --version
+./bin/audiowaveform --version
 ```
 
-## Use as library
+## Library usage
 
 ```ts
-import { getAudiowaveformPath, getAudiowaveformCommand } from "@jadujoel/waveform-installer";
+import { getAudiowaveformPath, getAudiowaveformCommand, hasAudiowaveformBinary } from "@jadujoel/waveform-installer";
 
+const installed = await hasAudiowaveformBinary();
 const binaryPath = getAudiowaveformPath();
-await Bun.$`binaryPath --version`;
+const command = getAudiowaveformCommand(["--version"]);
 ```
 
-## Notes
+Also exported:
 
-- On unsupported targets, installation fails with a clear platform/arch message.
-- On Linux, this package extracts the binary from a Debian package and checks for missing shared libraries.
-- On apt-based systems, installer attempts to auto-install missing runtime packages using root access or passwordless `sudo`.
-- If auto-install is not possible, it prints the exact `apt-get install` command to run manually.
-- Smoke tests run with `bun test`.
-- CI workflow at `.github/workflows/installer-smoke.yml` runs installer validation on macOS, Linux, and Windows runners.
-- Upstream project: https://github.com/bbc/audiowaveform
+- `$(...)` helper that prefixes commands with the installed `audiowaveform` binary.
+- `Waveform.$` alias.
+
+## CI and tests
+
+- Smoke tests: `bun test`.
+- Workflow: `.github/workflows/installer-smoke.yml`.
+- Current CI matrix validates install on:
+	- `macos-latest` (arm64)
+	- `ubuntu-24.04-arm`
+	- `ubuntu-latest` (x64)
+	- `windows-latest` (x64)
+
+## Upstream
+
+- Project source and binaries: https://github.com/bbc/audiowaveform

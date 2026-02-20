@@ -15,12 +15,13 @@ export function getAudiowaveformCommand(args: string[] = []) {
 }
 
 /**
- * Template string literal functino that forwards to Bun.$
+ * Template string literal function that forwards to Bun.$
  */
-export function $(strings: TemplateStringsArray, ...values: string[]) {
-  return Bun.$`${getAudiowaveformPath()} ${strings.reduce((acc, str, i) => acc + str + (values[i] || ""), "")}`;
+export function $(strings: TemplateStringsArray, ...values: unknown[]) {
+	const command = strings.reduce((acc, str, index) => acc + str + String(values[index] ?? ""), "");
+	return Bun.$`${getAudiowaveformPath()} ${command}`;
 }
 
 export const Waveform = {
-  $,
-}
+	$,
+};
