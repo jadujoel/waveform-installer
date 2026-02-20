@@ -31,19 +31,6 @@ jobs:
       - name: Install dependencies (runs postinstall)
         run: bun install --frozen-lockfile
 
-      - name: Install Linux runtime libs
-        if: startsWith(matrix.runner, 'ubuntu')
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libsndfile1 \
-            libid3tag0 \
-            libmad0 \
-            libgd3 \
-            libboost-program-options-dev \
-            libboost-filesystem-dev \
-            libboost-regex-dev
-
       - name: Verify installer CLI
         run: bun run ./bin/audiowaveform --version
 

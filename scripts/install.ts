@@ -19,6 +19,16 @@ const linuxAssetByArch: Partial<Record<Arch, string>> = {
   arm64: `audiowaveform_${AUDIOWAVEFORM_VERSION}-1-13_arm64.deb`,
 };
 
+const linuxDependencyPackageByLibraryPrefix = [
+  { libraryPrefix: "libsndfile.so", aptPackage: "libsndfile1" },
+  { libraryPrefix: "libid3tag.so", aptPackage: "libid3tag0" },
+  { libraryPrefix: "libmad.so", aptPackage: "libmad0" },
+  { libraryPrefix: "libgd.so", aptPackage: "libgd3" },
+  { libraryPrefix: "libboost_program_options.so", aptPackage: "libboost-program-options-dev" },
+  { libraryPrefix: "libboost_filesystem.so", aptPackage: "libboost-filesystem-dev" },
+  { libraryPrefix: "libboost_regex.so", aptPackage: "libboost-regex-dev" },
+] as const;
+
 async function main() {
   await cleanDirectory(TEMP_DIR);
   await ensureDirectory(INSTALL_DIR);
@@ -86,6 +96,8 @@ async function installOnLinux(arch: Arch) {
   }
 
   await Bun.write(FINAL_BIN_PATH, Bun.file(binaryPath));
+
+  await ensureLinuxRuntimeDependencies(FINAL_BIN_PATH);
 }
 
 async function installOnDarwin(arch: Arch) {
@@ -130,6 +142,129 @@ async function download(url: string, destination: string, headers?: Record<strin
 
   const content = await response.arrayBuffer();
   await Bun.write(destination, content);
+}
+
+async function ensureLinuxRuntimeDependencies(binaryPath: string) {
+  const missingLibraries = await getMissingSharedLibraries(binaryPath);
+  if (missingLibraries.length === 0) {
+    return;
+  }
+
+  const missingPackages = getAptPackagesForMissingLibraries(missingLibraries);
+
+  if (missingPackages.length === 0) {
+    throw new Error(
+      [
+        "audiowaveform requires missing shared libraries that could not be mapped to apt packages:",
+        ...missingLibraries.map((library) => `- ${library}`),
+        "Install required runtime dependencies for your distro, then re-run bun install.",
+      ].join("\n"),
+    );
+  }
+
+  const aptGetPath = Bun.which("apt-get");
+  if (!aptGetPath) {
+    throw new Error(
+      [
+        "audiowaveform requires Linux runtime libraries that are not installed.",
+        `Missing libs: ${missingLibraries.join(", ")}`,
+        "This installer can auto-fix dependencies only on apt-based systems.",
+      ].join("\n"),
+    );
+  }
+
+  const canUseSudo = await hasSudoWithoutPassword();
+  const isRoot = typeof process.getuid === "function" && process.getuid() === 0;
+
+  if (!isRoot && !canUseSudo) {
+    throw new Error(
+      [
+        "audiowaveform requires Linux runtime libraries that are not installed.",
+        `Missing libs: ${missingLibraries.join(", ")}`,
+        "Unable to auto-install because this process has no root access or passwordless sudo.",
+        `Run manually: sudo apt-get update && sudo apt-get install -y ${missingPackages.join(" ")}`,
+      ].join("\n"),
+    );
+  }
+
+  console.log(`Installing missing Linux runtime packages: ${missingPackages.join(", ")}`);
+
+  if (isRoot) {
+    await Bun.$`${aptGetPath} update`;
+    await Bun.$`${aptGetPath} install -y ${missingPackages}`;
+  } else {
+    const sudoPath = Bun.which("sudo");
+    if (!sudoPath) {
+      throw new Error("sudo command not found");
+    }
+
+    await Bun.$`${sudoPath} -n ${aptGetPath} update`;
+    await Bun.$`${sudoPath} -n ${aptGetPath} install -y ${missingPackages}`;
+  }
+
+  const stillMissing = await getMissingSharedLibraries(binaryPath);
+  if (stillMissing.length > 0) {
+    throw new Error(
+      [
+        "audiowaveform still has missing shared libraries after attempted auto-install:",
+        ...stillMissing.map((library) => `- ${library}`),
+      ].join("\n"),
+    );
+  }
+}
+
+async function getMissingSharedLibraries(binaryPath: string) {
+  const lddPath = Bun.which("ldd");
+  if (!lddPath) {
+    return [];
+  }
+
+  const result = await Bun.$`${lddPath} ${binaryPath}`.quiet();
+  const output = result.text();
+
+  const missingLibraries: string[] = [];
+  for (const line of output.split("\n")) {
+    if (!line.includes("=> not found")) {
+      continue;
+    }
+
+    const [name] = line.trim().split(" => ");
+    if (name) {
+      missingLibraries.push(name);
+    }
+  }
+
+  return missingLibraries;
+}
+
+function getAptPackagesForMissingLibraries(missingLibraries: string[]) {
+  const aptPackages = new Set<string>();
+
+  for (const libraryName of missingLibraries) {
+    const match = linuxDependencyPackageByLibraryPrefix.find(({ libraryPrefix }) =>
+      libraryName.startsWith(libraryPrefix),
+    );
+
+    if (match) {
+      aptPackages.add(match.aptPackage);
+    }
+  }
+
+  return [...aptPackages];
+}
+
+async function hasSudoWithoutPassword() {
+  const sudoPath = Bun.which("sudo");
+  if (!sudoPath) {
+    return false;
+  }
+
+  try {
+    await Bun.$`${sudoPath} -n true`.quiet();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function githubReleaseUrl(assetFileName: string) {
