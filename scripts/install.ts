@@ -316,4 +316,6 @@ async function cleanDirectory(dirPath: string) {
   await ensureDirectory(dirPath);
 }
 
-await main();
+if (import.meta.main) {
+  await main();
+}
