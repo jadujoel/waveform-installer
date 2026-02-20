@@ -1,0 +1,28 @@
+#!/usr/bin/env bun
+
+import { join } from "node:path";
+
+const binaryName = process.platform === "win32" ? "audiowaveform.exe" : "audiowaveform";
+const binaryPath = join(import.meta.dir, "..", ".audiowaveform", binaryName);
+
+const exists = await Bun.file(binaryPath).exists();
+if (!exists) {
+  console.error(
+    [
+      "audiowaveform binary is missing.",
+      "Re-run installation:",
+      "  bun install",
+    ].join("\n"),
+  );
+  process.exit(1);
+}
+
+const proc = Bun.spawn({
+  cmd: [binaryPath, ...process.argv.slice(2)],
+  stdin: "inherit",
+  stdout: "inherit",
+  stderr: "inherit",
+});
+
+const exitCode = await proc.exited;
+process.exit(exitCode);
