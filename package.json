@@ -1,13 +1,13 @@
 {
   "name": "@jadujoel/waveform-installer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "module": "index.ts",
   "main": "index.ts",
   "type": "module",
   "private": false,
-  	"publishConfig": {
-		"access": "public"
-	},
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "postinstall": "bun run ./scripts/install.ts",
     "test": "bun test"
