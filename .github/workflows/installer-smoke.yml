@@ -41,7 +41,10 @@ jobs:
             libsndfile1 \
             libid3tag0 \
             libmad0 \
-            libgd3
+            libgd3 \
+            libboost-program-options-dev \
+            libboost-filesystem-dev \
+            libboost-regex-dev
 
       - name: Verify installer CLI
         run: bun run ./bin/audiowaveform --version

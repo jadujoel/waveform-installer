@@ -34,6 +34,8 @@ await Bun.$`binaryPath --version`;
 ## Notes
 
 - On unsupported targets, installation fails with a clear platform/arch message.
+- On Linux, this package extracts the binary from a Debian package; required system shared libraries (including Boost and audio/image libs) must be present.
+- Ubuntu/Debian example: `sudo apt-get install -y libsndfile1 libid3tag0 libmad0 libgd3 libboost-program-options-dev libboost-filesystem-dev libboost-regex-dev`.
 - Smoke tests run with `bun test`.
 - CI workflow at `.github/workflows/installer-smoke.yml` runs installer validation on macOS, Linux, and Windows runners.
 - Upstream project: https://github.com/bbc/audiowaveform
