@@ -2,7 +2,12 @@
   "name": "@jadujoel/waveform-installer",
   "version": "0.1.0",
   "module": "index.ts",
+  "main": "index.ts",
   "type": "module",
+  "private": false,
+  	"publishConfig": {
+		"access": "public"
+	},
   "scripts": {
     "postinstall": "bun run ./scripts/install.ts",
     "test": "bun test"
@@ -20,5 +25,13 @@
     "konva": "10.2.0",
     "peaks.js": "4.0.0",
     "waveform-data": "4.5.2"
-  }
+  },
+  "files": [
+    "bin/audiowaveform",
+    "*.ts",
+    "tests/**/*",
+    "scripts/**/*",
+    "README.md",
+    "tsconfig.json"
+  ]
 }
