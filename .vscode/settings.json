@@ -1,5 +1,7 @@
 {
   "chat.tools.terminal.autoApprove": {
-    "./bin/audiowaveform": true
+    "./bin/audiowaveform": true,
+    "git remote": true,
+    "gh": true
   }
 }
