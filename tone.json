@@ -1,0 +1,8 @@
+{
+  "bitrate": 2337,
+  "format": "pcm_s24le",
+  "sampleRate": 48000,
+  "channels": 2,
+  "bitsPerSample": 24,
+  "duration": 0.5
+}

@@ -1,33 +1,16 @@
 {
-  "name": "@jadujoel/waveform-installer",
-  "version": "0.1.4",
-  "module": "index.ts",
-  "main": "index.ts",
-  "type": "module",
-  "private": false,
-  "publishConfig": {
-    "access": "public"
-  },
-  "bin": {
-    "audiowaveform": "./bin/audiowaveform"
-  },
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "5.9.3"
-  },
-  "dependencies": {
-    "konva": "10.2.0",
-    "peaks.js": "4.0.0",
-    "waveform-data": "4.5.2"
-  },
-  "files": [
-    "bin/audiowaveform",
-    "*.ts",
-    "tests/**/*",
-    "scripts/**/*",
-    "README.md",
-    "tsconfig.json"
-  ]
+	"name": "waveform-test",
+	"module": "index.ts",
+	"type": "module",
+	"private": true,
+	"dependencies": {
+		"@jadujoel/waveform-installer": "git+https://github.com/jadujoel/waveform-installer.git#main"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.4.4",
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "5.9.3"
+	}
 }
