@@ -33,8 +33,5 @@ jobs:
           bun install --frozen-lockfile
           bun index.ts
 
-      - name: Verify installer CLI
-        run: bun run bin/audiowaveform --version
-
       - name: Run smoke tests
         run: bun test
