@@ -1,0 +1,41 @@
+name: Integration Test
+
+on:
+  workflow_run:
+    workflows: ["Installer Smoke"]
+    branches: [main]
+    types: [completed]
+
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS arm64
+            runner: macos-latest
+          - name: Linux arm64
+            runner: ubuntu-24.04-arm
+          - name: Linux x64
+            runner: ubuntu-latest
+          - name: Windows x64
+            runner: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: integration
+          lfs: true
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install package from main branch
+        run: bun install
+
+      - name: Run index.ts
+        run: bun index.ts
