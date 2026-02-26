@@ -16,8 +16,9 @@ export function getAudiowaveformCommand(args: readonly string[] = []): string[] 
 
 export async function install(): Promise<string | never> {
 	const binary = getAudiowaveformPath();
-	if (!Bun.file(binary).exists()) {
-		await Bun.$`scripts/install.ts`
+	const exists = await Bun.file(binary).exists();
+	if (!exists) {
+		await Bun.$`bun scripts/install.ts`
 	}
 	return binary
 }
