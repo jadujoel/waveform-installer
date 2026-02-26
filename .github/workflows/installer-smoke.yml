@@ -29,7 +29,9 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies (runs postinstall)
-        run: bun install --frozen-lockfile
+        run: |
+          bun install --frozen-lockfile
+          bun index.ts
 
       - name: Verify installer CLI
         run: bun run ./bin/audiowaveform --version

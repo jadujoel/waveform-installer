@@ -33,8 +33,8 @@ export async function $(strings: TemplateStringsArray, ...values: unknown[]): Pr
 }
 
 export interface GenerateOptions<
-TWavFile extends string = `${string}.wav`,
-TWaveformFile extends string = `${string}.png` | `${string}.dat`
+TWavFile extends string = string, // `${string}.wav`,
+TWaveformFile extends string = string, // `${string}.png` | `${string}.dat`
 > {
 	readonly input: TWavFile;
 	/**
@@ -52,7 +52,7 @@ TWaveformFile extends string = `${string}.png` | `${string}.dat`
 	readonly zoom?: number;
 }
 
-export async function generate(options: GenerateOptions): Promise<string> {
+export async function generate<const TGenerateOptions extends GenerateOptions>(options: TGenerateOptions): Promise<string> {
 	const {
 		output = `${options.input.replace(".wav", ".png")}`,
 	  bits = 8,
@@ -78,3 +78,7 @@ export const Waveform = {
 	install,
 	generate
 };
+
+if (import.meta.main) {
+	await install()
+}
