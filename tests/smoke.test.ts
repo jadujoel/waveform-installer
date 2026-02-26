@@ -1,10 +1,13 @@
 import { afterAll, expect, test } from "bun:test";
 import { join } from "node:path";
 import {
+  $,
   getAudiowaveformCommand,
   getAudiowaveformPath,
   hasAudiowaveformBinary,
+  install,
   generate,
+  main,
 } from "../index";
 
 const tonePath = join(import.meta.dir, "..", "tone.wav");
@@ -110,4 +113,79 @@ test("generate helper creates png from tone.wav", async () => {
 
   const bytes = new Uint8Array(await outputFile.arrayBuffer()).slice(0, 8);
   assertPngHeader(bytes);
+});
+
+test("install() returns binary path when already installed", async () => {
+  const binaryPath = await install();
+  expect(binaryPath).toBe(getAudiowaveformPath());
+  expect(await Bun.file(binaryPath).exists()).toBe(true);
+});
+
+test("install() runs install script when binary is missing", async () => {
+  const binaryPath = getAudiowaveformPath();
+  const backupPath = binaryPath + ".bak";
+  await Bun.$`mv ${binaryPath} ${backupPath}`.quiet();
+  try {
+    const result = await install();
+    expect(result).toBe(binaryPath);
+    expect(await Bun.file(binaryPath).exists()).toBe(true);
+  } finally {
+    if (await Bun.file(backupPath).exists()) {
+      await Bun.$`mv ${backupPath} ${binaryPath}`.quiet();
+    }
+  }
+});
+
+test("$ template literal runs audiowaveform command", async () => {
+  const result = await $`--version`;
+  expect(result.exitCode).toBe(0);
+  const text = result.text();
+  expect(text).toContain("AudioWaveform");
+});
+
+test("$ template literal with interpolated values", async () => {
+  const flag = "--version";
+  const result = await $`${flag}`;
+  expect(result.exitCode).toBe(0);
+  const text = result.text();
+  expect(text).toContain("AudioWaveform");
+});
+
+test("generate throws on invalid input file", async () => {
+  await expect(
+    generate({ input: "/nonexistent/file.wav" })
+  ).rejects.toThrow("audiowaveform failed");
+});
+
+test("generate uses default output, bits, and zoom", async () => {
+  const output = tonePath.replace(".wav", ".png");
+  generatedFiles.add(output);
+
+  const result = await generate({ input: tonePath });
+  expect(result).toBe(output);
+  expect(await Bun.file(output).exists()).toBe(true);
+});
+
+test("running index.ts as main prints install path", async () => {
+  const proc = Bun.spawn({
+    cmd: ["bun", join(import.meta.dir, "..", "index.ts")],
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const exitCode = await proc.exited;
+  const stdout = await new Response(proc.stdout).text();
+  expect(exitCode).toBe(0);
+  expect(stdout).toContain("Audiowaveform binary is installed at:");
+});
+
+test("main() installs and logs binary path", async () => {
+  const logs: string[] = [];
+  const origLog = console.log;
+  console.log = (...args: unknown[]) => logs.push(args.join(" "));
+  try {
+    await main();
+  } finally {
+    console.log = origLog;
+  }
+  expect(logs.some((l) => l.includes("Audiowaveform binary is installed at:"))).toBe(true);
 });

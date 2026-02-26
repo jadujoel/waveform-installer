@@ -18,7 +18,8 @@ export async function install(): Promise<string | never> {
 	const binary = getAudiowaveformPath();
 	const exists = await Bun.file(binary).exists();
 	if (!exists) {
-		await Bun.$`bun scripts/install.ts`
+		const installer = `${import.meta.dir}/scripts/install.ts`;
+		await Bun.$`bun ${installer}`;
 	}
 	return binary
 }
@@ -93,10 +94,13 @@ export const Waveform = {
 	getAudiowaveformCommand,
 	hasAudiowaveformBinary,
 	install,
-	generate
+	generate,
+	main,
 };
 
-if (import.meta.main) {
+export async function main() {
 	await install()
 	console.log(`Audiowaveform binary is installed at: ${getAudiowaveformPath()}`);
 }
+
+import.meta.main && main();
