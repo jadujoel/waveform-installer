@@ -105,10 +105,19 @@ async function installOnDarwin(arch: Arch) {
     throw unsupportedPlatformError("darwin", arch);
   }
 
-  let binaryPath = Bun.which("audiowaveform");
+  // Exclude node_modules paths when searching for the real binary.
+  // During bun install, node_modules/.bin is prepended to PATH and contains
+  // our own wrapper script. Using Bun.which() without filtering would find
+  // the wrapper instead of the real binary, creating a circular symlink.
+  const systemPath = (process.env.PATH ?? "")
+    .split(":")
+    .filter(dir => !dir.includes("node_modules"))
+    .join(":");
+
+  let binaryPath = Bun.which("audiowaveform", { PATH: systemPath });
 
   if (!binaryPath) {
-    const brewPath = Bun.which("brew");
+    const brewPath = Bun.which("brew", { PATH: systemPath });
     if (!brewPath) {
       throw new Error(
         [
@@ -121,7 +130,7 @@ async function installOnDarwin(arch: Arch) {
 
     console.log("Installing audiowaveform via Homebrew...");
     await Bun.$`${brewPath} install audiowaveform`;
-    binaryPath = Bun.which("audiowaveform");
+    binaryPath = Bun.which("audiowaveform", { PATH: systemPath });
   }
 
   if (!binaryPath) {
