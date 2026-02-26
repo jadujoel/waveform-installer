@@ -1,14 +1,13 @@
 import { join } from "node:path";
 
 const binaryName = process.platform === "win32" ? "audiowaveform.exe" : "audiowaveform";
-export const audioWaveformPath = join(import.meta.dir, ".audiowaveform", binaryName);
 
 export function getAudiowaveformPath(): string {
-	return audioWaveformPath;
+	return join(import.meta.dir, ".audiowaveform", binaryName);
 }
 
 export async function hasAudiowaveformBinary(): Promise<boolean> {
-	return Bun.file(audioWaveformPath).exists();
+	return Bun.file(getAudiowaveformPath()).exists();
 }
 
 export function getAudiowaveformCommand(args: readonly string[] = []): string[] {
@@ -71,7 +70,6 @@ export async function generate<const TGenerateOptions extends GenerateOptions>(o
 export const Waveform = {
 	$,
 	binaryName,
-	audioWaveformPath,
 	getAudiowaveformPath,
 	getAudiowaveformCommand,
 	hasAudiowaveformBinary,
@@ -81,4 +79,5 @@ export const Waveform = {
 
 if (import.meta.main) {
 	await install()
+	console.log(`Audiowaveform binary is installed at: ${getAudiowaveformPath()}`);
 }
