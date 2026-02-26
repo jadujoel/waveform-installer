@@ -29,7 +29,43 @@ export async function install(): Promise<string | never> {
 export async function $(strings: TemplateStringsArray, ...values: unknown[]): Promise<Bun.$.ShellOutput | never> {
 	const binary = await install()
 	const command = strings.reduce((acc, str, index) => acc + str + String(values[index] ?? ""), "");
-	return Bun.$`${binary} ${command}`;
+	return Bun.$`${binary} ${{ raw: command }}`;
+}
+
+export interface GenerateOptions<
+TWavFile extends string = `${string}.wav`,
+TWaveformFile extends string = `${string}.png` | `${string}.dat`
+> {
+	readonly input: TWavFile;
+	/**
+	 * If not provided, the output file will be named after the input file with a .png extension.
+	 * @default `${input}.png`
+	 */
+	readonly output?: TWaveformFile;
+	/**
+	 * @default 8
+	 */
+	readonly bits?: 8 | 16;
+	/**
+	 * @default 64
+	 */
+	readonly zoom?: number;
+}
+
+export async function generate(options: GenerateOptions): Promise<string> {
+	const {
+		output = `${options.input.replace(".wav", ".png")}`,
+	  bits = 8,
+		zoom = 64,
+ } = options;
+	const args = [
+		"-i", options.input,
+		"-o", output,
+		"--bits", bits,
+		"--zoom", zoom,
+	];
+	await Waveform.$`${args.join(" ")}`;
+	return output;
 }
 
 export const Waveform = {
@@ -40,4 +76,5 @@ export const Waveform = {
 	getAudiowaveformCommand,
 	hasAudiowaveformBinary,
 	install,
+	generate
 };
