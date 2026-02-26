@@ -8,10 +8,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "scripts": {
-    "postinstall": "bun run ./scripts/install.ts",
-    "test": "bun test"
-  },
+
   "bin": {
     "audiowaveform": "./bin/audiowaveform"
   },
