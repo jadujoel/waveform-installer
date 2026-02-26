@@ -28,6 +28,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
         with:
+          ref: integration
           lfs: true
 
       - name: Setup Bun
