@@ -28,7 +28,12 @@ export async function install(): Promise<string | never> {
  */
 export async function $(strings: TemplateStringsArray, ...values: unknown[]): Promise<Bun.$.ShellOutput | never> {
 	const binary = await install()
-	const command = strings.reduce((acc, str, index) => acc + str + String(values[index] ?? ""), "");
+	const command = strings.reduce((acc, str, index) => {
+		if (index >= values.length) return acc + str;
+		// Escape backslashes in interpolated values so Windows paths survive shell interpretation
+		const escaped = String(values[index] ?? "").replace(/\\/g, "\\\\");
+		return acc + str + escaped;
+	}, "");
 	return Bun.$`${binary} ${{ raw: command }}`;
 }
 
@@ -58,13 +63,26 @@ export async function generate<const TGenerateOptions extends GenerateOptions>(o
 	  bits = 8,
 		zoom = 64,
  } = options;
-	const args = [
-		"-i", options.input,
-		"-o", output,
-		"--bits", bits,
-		"--zoom", zoom,
-	];
-	await Waveform.$`${args.join(" ")}`;
+
+	const binary = await install();
+	const proc = Bun.spawn({
+		cmd: [
+			binary,
+			"-i", options.input,
+			"-o", output,
+			"--bits", String(bits),
+			"--zoom", String(zoom),
+		],
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+
+	const exitCode = await proc.exited;
+	if (exitCode !== 0) {
+		const stderr = await new Response(proc.stderr).text();
+		throw new Error(`audiowaveform failed with exit code ${exitCode}: ${stderr}`);
+	}
+
 	return output;
 }
 
